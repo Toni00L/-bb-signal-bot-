@@ -370,7 +370,7 @@ def run():
         cfg,
         f"\U0001F916 BB Wick-Touch MR scanner *started*\n"
         f"Symbol: {cfg['symbol']}\nTimeframe: {cfg['timeframe']}\n"
-        f"Entry mode: {cfg['entry_mode']}\nMA type: {cfg['ma_type']}"
+        f"Entry mode: {cfg['entry_mode'].replace('_', ' ').title()}\nMA type: {cfg['ma_type']}"
     )
 
     while True:
