@@ -273,9 +273,25 @@ def process_candle(row, state, cfg):
 
     ts_str = pd.to_datetime(row["ts"], unit="ms", utc=True).strftime("%Y-%m-%d %H:%M UTC")
 
+    # ---- diagnostic line, printed every candle regardless of outcome (visible in Railway logs) ----
+    print(
+        f"[check] {ts_str} | O={row['open']:.2f} H={high:.2f} L={low:.2f} C={close:.2f} | "
+        f"basis={basis:.2f} upper={upper:.2f} lower={lower:.2f} | "
+        f"long_cond={long_cond} short_cond={short_cond} | "
+        f"position={'flat' if state['position'] is None else state['position']['side']}"
+    )
+
     # ---- 1) manage an already-open virtual position — check exit before any new entry ----
     pos = state["position"]
     if pos is not None:
+        # TP is a MOVING target when not using a fixed % — it tracks the CURRENT bar's
+        # basis every candle. This mirrors the Pine script re-issuing strategy.exit with
+        # the live basis value every bar (a real behavior of the .pine file, not an
+        # approximation). SL stays frozen at the entry price, matching
+        # strategy.position_avg_price, which doesn't change since this script never pyramids.
+        if not cfg["use_fixed_tp"]:
+            pos["tp"] = basis
+
         if pos["side"] == "long":
             hit_tp = cfg["use_tp"] and high >= pos["tp"]
             hit_sl = cfg["use_stop_loss"] and low <= pos["sl"]
